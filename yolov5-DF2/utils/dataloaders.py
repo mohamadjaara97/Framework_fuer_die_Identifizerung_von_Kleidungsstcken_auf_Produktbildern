@@ -427,8 +427,8 @@ class LoadStreams:
 
 def img2label_paths(img_paths):
     # Define label paths as a function of image paths
-    sa, sb = f'{os.sep}images{os.sep}', f'{os.sep}labels{os.sep}'  # /images/, /labels/ substrings
-    return [sb.join(x.rsplit(sa, 1)).rsplit('.', 1)[0] + '.txt' for x in img_paths]
+    sa, sb = f'{os.sep}image{os.sep}', f'{os.sep}annos{os.sep}'  # /images/, /labels/ substrings
+    return [sb.join(x.rsplit(sa, 1)).rsplit('.', 1)[0] + '.json' for x in img_paths]
 
 
 class LoadImagesAndLabels(Dataset):
@@ -1009,7 +1009,8 @@ def verify_image_label(args):
         if os.path.isfile(lb_file):
             nf = 1  # label found
             with open(lb_file) as f:
-                lb = [x.split() for x in f.read().strip().splitlines() if len(x)]
+                f = json.loads(f.read())
+                lb = convert_annotation(f, im.size)
                 if any(len(x) > 6 for x in lb):  # is segment
                     classes = np.array([x[0] for x in lb], dtype=np.float32)
                     segments = [np.array(x[1:], dtype=np.float32).reshape(-1, 2) for x in lb]  # (cls, xy1...)
@@ -1218,4 +1219,20 @@ def create_classification_dataloader(path,
                               sampler=sampler,
                               pin_memory=PIN_MEMORY,
                               worker_init_fn=seed_worker,
-                              generator=generator)  # or DataLoader(persistent_workers=True)
+                              generator=generator)  # or DataLoader(persistent_workers=True
+def convert_annotation(annotation, img_size):
+    width, height = img_size
+    yolo_annotation = []
+    for i in annotation:
+            if i == 'source' or i == 'pair_id':
+                continue
+            else:
+                box = annotation[i]['bounding_box']
+                x_1 = round((box[0] + box[2]) / 2 / width, 6)
+                y_1 = round((box[1] + box[3]) / 2 / height, 6)
+                w = round((box[2] - box[0]) / width, 6)
+                h = round((box[3] - box[1]) / height, 6)
+                category_id = int(annotation[i]['category_id'] - 1)
+                line = (" ".join([str(category_id), str(x_1), str(y_1), str(w), str(h)])).split()
+                yolo_annotation.append(line)
+    return yolo_annotation

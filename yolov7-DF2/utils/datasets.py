@@ -1,6 +1,7 @@
 # Dataset utils and dataloaders
 
 import glob
+import json
 import logging
 import math
 import os
@@ -346,8 +347,8 @@ class LoadStreams:  # multiple IP or RTSP cameras
 
 def img2label_paths(img_paths):
     # Define label paths as a function of image paths
-    sa, sb = os.sep + 'images' + os.sep, os.sep + 'labels' + os.sep  # /images/, /labels/ substrings
-    return ['txt'.join(x.replace(sa, sb, 1).rsplit(x.split('.')[-1], 1)) for x in img_paths]
+    sa, sb = f'{os.sep}image{os.sep}', f'{os.sep}annos{os.sep}'  # /images/, /labels/ substrings
+    return [sb.join(x.rsplit(sa, 1)).rsplit('.', 1)[0] + '.json' for x in img_paths]
 
 
 class LoadImagesAndLabels(Dataset):  # for training/testing
@@ -486,7 +487,8 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                 if os.path.isfile(lb_file):
                     nf += 1  # label found
                     with open(lb_file, 'r') as f:
-                        l = [x.split() for x in f.read().strip().splitlines()]
+                        f = json.loads(f.read())
+                        l = convert_annotation(f, im.size)
                         if any([len(x) > 8 for x in l]):  # is segment
                             classes = np.array([x[0] for x in l], dtype=np.float32)
                             segments = [np.array(x[1:], dtype=np.float32).reshape(-1, 2) for x in l]  # (cls, xy1...)
@@ -1178,7 +1180,7 @@ def pastein(image, labels, sample_labels, sample_images, sample_masks):
         
         box = np.array([xmin, ymin, xmax, ymax], dtype=np.float32)
         if len(labels):
-            ioa = bbox_ioa(box, labels[:, 1:5])  # intersection over area     
+            ioa = bbox_ioa(box, labels[:, 1:5])  # intersection over area
         else:
             ioa = np.zeros(1)
         
@@ -1318,3 +1320,21 @@ def load_segmentations(self, index):
     #print(key)
     # /work/handsomejw66/coco17/
     return self.segs[key]
+
+
+def convert_annotation(annotation, img_size):
+    width, height = img_size
+    yolo_annotation = []
+    for i in annotation:
+        if i == 'source' or i == 'pair_id':
+            continue
+        else:
+            box = annotation[i]['bounding_box']
+            x_1 = round((box[0] + box[2]) / 2 / width, 6)
+            y_1 = round((box[1] + box[3]) / 2 / height, 6)
+            w = round((box[2] - box[0]) / width, 6)
+            h = round((box[3] - box[1]) / height, 6)
+            category_id = int(annotation[i]['category_id'] - 1)
+            line = (" ".join([str(category_id), str(x_1), str(y_1), str(w), str(h)])).split()
+            yolo_annotation.append(line)
+    return yolo_annotation
