@@ -52,7 +52,7 @@ def detection():
          else:
           link = ""
           with open('test.log', 'w') as f:
-            process = subprocess.Popen("cd yolov5 && python detect.py --weights {} --source {}".format(weights, image),
+            process = subprocess.Popen("cd yolov5_DF2 && python detect.py --weights {} --source {}".format(weights, image),
                                        shell=True, stdout=subprocess.PIPE , stderr=subprocess.PIPE)
             for line in iter(process.stderr.readline, b''):
                 sys.stdout.write(line.decode("utf-8"))
@@ -64,9 +64,9 @@ def detection():
           link = '/'.join(parts[-1:])
           link = re.sub(r'\x1b\[\d+m', '', link)
           link = re.sub(r'\n', '', link)
-          image_link = "yolov5/" + link + "/" + image.split("/")[-1]
+          image_link = "yolov5_DF2/" + link + "/" + image.split("/")[-1]
           print("The pic is saved in: " + image_link)
-          image = Image.open("yolov5/" + image_link)
+          image = Image.open("yolov5_DF2/" + image_link)
           image.show()
     if (answer == "Y7"):
         weights = "Weights(link *.pt or without weights): "
@@ -209,13 +209,13 @@ def yolov5(api_key,dataset_answer, klassen_anzahl_answer):
         else:
          with open('test.log', 'w') as f:
           process = subprocess.Popen(
-            "pip install torch==1.8.1+cu111 torchvision==0.9.1+cu111 torchaudio===0.8.1 -f https://download.pytorch.org/whl/lts/1.8/torch_lts.html && cd yolov5 && pip install -r requirements.txt ",
+            "pip install torch==1.8.1+cu111 torchvision==0.9.1+cu111 torchaudio===0.8.1 -f https://download.pytorch.org/whl/lts/1.8/torch_lts.html && cd yolov5_DF2 && pip install -r requirements.txt ",
             shell=True, stdout=subprocess.PIPE)
           for line in iter(process.stdout.readline, b''):
             sys.stdout.write(line.decode("utf-8"))
             f.write(line.decode("utf-8"))
           process = subprocess.Popen(
-             "cd yolov5 && pip install wandb && wandb login {} && python train.py --img {} --batch {} --epochs {} --save-period 1 --data ../data.yaml --weights {} --cfg {} --bbox_interval 1 --workers 1".format(
+             "cd yolov5_DF2 && pip install wandb && wandb login {} && python train.py --img {} --batch {} --epochs {} --save-period 1 --data ../data.yaml --weights {} --cfg {} --bbox_interval 1 --workers 1".format(
                 api_key,
                 img_size, batch, epochs, weights, cfg), stdin=subprocess.PIPE, shell=True, stdout=subprocess.PIPE)
           for line in iter(process.stdout.readline, b''):
@@ -259,7 +259,7 @@ def yolov7(api_key,dataset_answer, klassen_anzahl_answer):
        else:
         with open('test.log', 'w') as f:
          process = subprocess.Popen(
-            "pip install torch==1.8.1+cu111 torchvision==0.9.1+cu111 torchaudio===0.8.1 -f https://download.pytorch.org/whl/lts/1.8/torch_lts.html && cd yolov5 && pip install -r requirements.txt ",
+            "pip install torch==1.8.1+cu111 torchvision==0.9.1+cu111 torchaudio===0.8.1 -f https://download.pytorch.org/whl/lts/1.8/torch_lts.html && cd yolov5_DF2 && pip install -r requirements.txt ",
             shell=True, stdout=subprocess.PIPE)
          for line in iter(process.stdout.readline, b''):
             sys.stdout.write(line.decode("utf-8"))
